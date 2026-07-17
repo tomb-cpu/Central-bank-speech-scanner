@@ -1,8 +1,21 @@
 # Central Bank Speech Scanner
 
-Polls speech feeds from the BIS (which aggregates ~60 member central banks)
-plus direct feeds from the Fed, ECB, BoE, BoJ, RBA, and BoC, and reports
-anything not seen before.
+Two automated products, both running on GitHub Actions:
+
+1. **Link alerts (every 6 hours)** — polls speech feeds from the BIS
+   (which aggregates ~60 member central banks) plus direct feeds from the
+   Fed, ECB, BoE, BoJ, RBA, and BoC, and posts anything not seen before to
+   the issue labeled `speech-alerts`.
+2. **Daily G10 briefing (weekday mornings)** — an agentic Claude Code run
+   that fetches the last 2 days of G10 communications from direct feeds
+   (`scanner/fetch_window.py`), searches Reuters/Bloomberg/FT newswire for
+   interviews and press conference remarks (this is the only coverage for
+   BoJ, SNB, Riksbank, Norges Bank, and RBNZ, which lack reliable RSS),
+   reads the full texts, and writes a BCA-style analytical briefing with a
+   hawkish/dovish signal per communication. The briefing is committed to
+   `briefings/` and posted to the issue labeled `cb-briefings`.
+   Instructions the agent follows: `briefing/BRIEFING_INSTRUCTIONS.md`.
+   Requires the `ANTHROPIC_API_KEY` repository secret.
 
 ## How it works
 

@@ -1,0 +1,40 @@
+name: Daily G10 CB briefing
+
+on:
+  schedule:
+    - cron: "45 10 * * 1-5"  # 10:45 UTC weekdays (~06:45 ET) — before US open
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: cb-briefing
+  cancel-in-progress: false
+
+jobs:
+  briefing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure git identity
+        run: |
+          git config user.name "cb-briefing[bot]"
+          git config user.email "actions@users.noreply.github.com"
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Read briefing/BRIEFING_INSTRUCTIONS.md and follow it exactly to
+            produce, commit, and publish today's G10 central bank briefing.
+            You are running unattended — do not ask questions.
+          claude_args: |
+            --allowedTools Read,Write,Edit,Glob,Grep,Bash,WebSearch,WebFetch
+            --max-turns 80
