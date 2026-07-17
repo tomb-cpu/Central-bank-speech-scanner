@@ -6,6 +6,7 @@ next to this script, so consecutive runs -- including ones from a fresh
 scheduled session that only has the repo, not this conversation's memory --
 only report genuinely new speeches.
 """
+import argparse
 import json
 import sys
 from datetime import datetime, timezone
@@ -90,8 +91,20 @@ def scan():
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--out", metavar="FILE",
+                        help="also write the new items as JSON to this file")
+    args = parser.parse_args()
+
     new_items, errors = scan()
     timestamp = datetime.now(timezone.utc).isoformat()
+
+    if args.out:
+        Path(args.out).write_text(json.dumps({
+            "scanned_at": timestamp,
+            "new": new_items,
+            "errors": errors,
+        }, indent=2) + "\n")
 
     if new_items:
         print(f"[{timestamp}] {len(new_items)} new speech(es):\n")

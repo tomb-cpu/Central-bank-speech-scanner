@@ -25,12 +25,24 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python scan.py
 ```
 
-## Scheduling
+## Scheduling & notifications
 
-This repo is scanned automatically by a Claude Code Routine: on a cron
-schedule, a fresh session clones the repo, runs `scan.py`, and if new
-speeches were found, pushes a phone notification and commits the updated
-`state.json` back to this branch. No manual triggering needed.
+A GitHub Actions workflow (`.github/workflows/scan.yml`) runs the scanner
+every 6 hours (and on demand via "Run workflow" on the Actions tab). When
+new speeches are found it:
+
+1. Commits the updated `scanner/state.json`.
+2. Posts the list of new speeches as a comment on the rolling
+   **"Central bank speech alerts"** issue (label: `speech-alerts`).
+
+**To get notified:** subscribe to that issue (or Watch → All activity on
+the repo). GitHub then delivers each alert to you by email and/or the
+GitHub mobile app, per your own notification settings — this works for any
+collaborator, so teammates just need repo access plus a subscription to
+the issue.
+
+To switch to Slack/Teams/direct email later, replace the "Notify via issue
+comment" step with a webhook or SMTP action using a repo secret.
 
 ## Adding a central bank
 

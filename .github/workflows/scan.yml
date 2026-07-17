@@ -1,0 +1,79 @@
+name: Scan central bank speeches
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"  # every 6 hours, offset to avoid top-of-hour load
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: speech-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r scanner/requirements.txt
+
+      - name: Run scanner
+        working-directory: scanner
+        run: python scan.py --out /tmp/new_speeches.json
+
+      - name: Commit updated state
+        run: |
+          if git diff --quiet scanner/state.json; then
+            echo "State unchanged, nothing to commit."
+            exit 0
+          fi
+          git config user.name "speech-scanner[bot]"
+          git config user.email "actions@users.noreply.github.com"
+          git add scanner/state.json
+          git commit -m "Update seen-speech state ($(date -u +%Y-%m-%dT%H:%MZ))"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Notify via issue comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          COUNT=$(jq '.new | length' /tmp/new_speeches.json)
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No new speeches; skipping notification."
+            exit 0
+          fi
+
+          {
+            echo "**$COUNT new central bank speech(es)** — $(date -u '+%d %b %Y %H:%M UTC')"
+            echo
+            jq -r '.new[] | "- **[\(.source)]** [\(.title)](\(.link))" + (if .published != "" then " — \(.published)" else "" end)' /tmp/new_speeches.json
+            ERRS=$(jq -r '.errors | length' /tmp/new_speeches.json)
+            if [ "$ERRS" -gt 0 ]; then
+              echo
+              echo "<sub>Source errors this run: $(jq -r '.errors | join("; ")' /tmp/new_speeches.json)</sub>"
+            fi
+          } > /tmp/comment.md
+
+          gh label create speech-alerts --color 1D76DB --force \
+            --description "Automated central bank speech notifications" || true
+
+          ISSUE=$(gh issue list --label speech-alerts --state open --json number --jq '.[0].number')
+          if [ -z "$ISSUE" ]; then
+            ISSUE=$(gh issue create \
+              --title "Central bank speech alerts" \
+              --label speech-alerts \
+              --body "Automated feed of newly detected central bank speeches. **Subscribe to this issue (or watch the repo) to get notified.** Posted by the scheduled scanner workflow." \
+              | grep -oE '[0-9]+$')
+          fi
+          gh issue comment "$ISSUE" --body-file /tmp/comment.md
