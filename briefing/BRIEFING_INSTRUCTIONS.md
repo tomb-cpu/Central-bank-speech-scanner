@@ -28,6 +28,21 @@ Do NOT use the BIS feed for this briefing — its 1–5 day publication lag
 makes it unsuitable (it remains in `scanner/scan.py` only for the separate
 link-alert workflow).
 
+## Step 1b — Policy rate backdrop (BIS SDMX Stats API)
+
+Run:
+
+```bash
+python3 scanner/fetch_policy_rates.py
+```
+
+This prints a markdown table of current G10 policy rates (with the most
+recent change per bank) from the BIS statistical API. Include it verbatim
+in the briefing's "Policy rate backdrop" section. Use the last-change
+column as context when judging speech signals (e.g. a "hawkish" read means
+more when a bank just cut). If the script fails, note that in Coverage
+Notes and continue without the table.
+
 ## Step 2 — Newswire search
 
 Run targeted web searches to catch interviews, Q&A comments, and press
@@ -74,6 +89,11 @@ Write the briefing to `briefings/YYYY-MM-DD.md` (today's UTC date).
 *Sources: [feeds used] + Reuters/Bloomberg newswire search*
 
 **[N] communications across [N] institutions**
+
+## Policy rate backdrop
+*Source: BIS SDMX Stats API (WS_CBPOL)*
+
+[table from fetch_policy_rates.py]
 
 ---
 

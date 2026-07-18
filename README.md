@@ -12,7 +12,9 @@ Two automated products, both running on GitHub Actions:
    interviews and press conference remarks (this is the only coverage for
    BoJ, SNB, Riksbank, Norges Bank, and RBNZ, which lack reliable RSS),
    reads the full texts, and writes a BCA-style analytical briefing with a
-   hawkish/dovish signal per communication. The briefing is committed to
+   hawkish/dovish signal per communication. Each briefing opens with a
+   current G10 policy-rate table pulled from the BIS SDMX Stats API
+   (`scanner/fetch_policy_rates.py`, dataflow `WS_CBPOL`). The briefing is committed to
    `briefings/` and posted to the issue labeled `cb-briefings`.
    Instructions the agent follows: `briefing/BRIEFING_INSTRUCTIONS.md`.
    Requires the `ANTHROPIC_API_KEY` repository secret.
